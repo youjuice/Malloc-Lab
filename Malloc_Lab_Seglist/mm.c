@@ -93,6 +93,7 @@ static int find_index(size_t size);
 // 추가 변수 선언
 static char *heap_listp = NULL;             // 메모리 힙의 시작 주소
 void *seg_free_lists[SEGSIZE + 1];          // Segregated List 선언
+// static char *next_listp[SEGSIZE + 1];
 
 /* 
  * mm_init - initialize the malloc package.
@@ -273,7 +274,7 @@ static void *place(void *bp, size_t allocated_size)
     else
     {
         PUT(HDRP(bp), PACK(curr_size, 1));                      // 분할할 필요가 없다면, 그냥 할당
-        PUT(FTRP(bp), PACK(curr_size, 1));                      // 남는 가용 블록이 없으므로 putFreeBlock 호출할 필요 없음
+        PUT(FTRP(bp), PACK(curr_size, 1));                      // 남는 가용 블록이 없으므로 insert_node 호출할 필요 없음
     }
     return bp;
 }
@@ -284,6 +285,7 @@ static void *place(void *bp, size_t allocated_size)
 * - Segregated List에서 알맞은 인덱스를 찾아서 가용 블록 탐색
 */
 
+// First Fit (secs: 0.005350)
 static void *find_fit(size_t asize)
 {
     char *bp;
@@ -299,6 +301,62 @@ static void *find_fit(size_t asize)
     }
     return NULL;    // 알맞은 크기가 없다면 NULL 반환
 }
+
+// Best Fit (secs: 0.006705)
+// static void *find_fit(size_t asize)
+// {
+//     char *best_fit_bp = NULL;               // 가장 작은 적합한 블록
+//     size_t min_diff = __INT_MAX__;          // 가장 작은 크기 차이값을 저장하는 변수
+//     int index = find_index(asize);          // 요청한 크기에 대한 인덱스
+
+//     for (int i = index; i <= SEGSIZE; i++)                                  
+//     {
+//         // 현재 segregated list에서 적합한 블록 탐색
+//         for (char *bp = seg_free_lists[i]; bp != NULL; bp = SUCC_FREEP(bp))       
+//         {
+//             if (GET_SIZE(HDRP(bp)) >= asize)                                
+//             {
+//                 size_t diff = GET_SIZE(HDRP(bp)) - asize;
+
+//                 if (diff < min_diff) 
+//                 {
+//                     best_fit_bp = bp;       // 현재 블록을 가장 작은 적합 블록으로 설정
+//                     min_diff = diff;        // 최소 차이 업데이트
+//                 }
+//             }
+//         }
+//     }
+    
+//     return best_fit_bp;
+// }
+
+// Next Fit -> next_listp를 업데이트 하다 보니 든 생각.. 어차피 LIFO 방식이라 First Fit이랑 다른거 없음.. (즉, 의미없는 짓이었다..ㅎㅎ)
+// static void *find_fit(size_t size) 
+// {
+//     // Next Fit을 이용하여 할당할 블록을 찾음
+//     char *bp;
+//     int index = find_index(size);
+
+//     if (next_listp[index] == NULL)
+//         next_listp[index] = seg_free_lists[index];
+
+//     for (bp = next_listp[index]; GET_SIZE(HDRP(bp)) > 0; bp = SUCC_FREEP(bp))
+//     {
+//         if (!GET_ALLOC(HDRP(bp)) && (size <= GET_SIZE(HDRP(bp))))
+//         {
+//             next_listp[index] = bp;
+//             return bp;
+//         }
+//     }
+
+//     for (bp = heap_listp; HDRP(bp) != HDRP(next_listp[index]); bp = SUCC_FREEP(bp))
+//     {
+//         if (!GET_ALLOC(HDRP(bp)) && (size <= GET_SIZE(HDRP(bp))))
+//             return bp;
+//     }
+
+//     return NULL;
+// }
 
 
 /*
@@ -338,7 +396,7 @@ void *mm_realloc(void *ptr, size_t size)
     if (size == 0) 
     {
         mm_free(ptr);
-        return NULL;
+        return NULL; 
     }
 
     if (ptr == NULL) 
@@ -391,7 +449,7 @@ void *mm_realloc(void *ptr, size_t size)
 * - 블록의 크기 단위는 2의 n제곱 단위로 한다.
 */
 
-// SegList Index를 찾는 함수
+// Seg_List Index를 찾는 함수
 static int find_index(size_t size)
 {
     int index = 0;
