@@ -20,6 +20,6 @@ Perf index = 42 (util) + 40 (thru) = **82/100**
 Results for mm malloc: <br>
 Perf index = 44 (util) + 40 (thru) = **84/100**
 
-### Segregated List + Reallocate 함수 최적화 ⭐️⭐️⭐️
+### Segregated List + Reallocate 함수 최적화 (Final)
 Results for mm malloc: <br>
 Perf index = 50 (util) + 40 (thru) = **90/100**
